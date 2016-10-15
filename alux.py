@@ -1,9 +1,53 @@
 #!/usr/bin/env python3
 import os, time, sys, datetime, requests, json
 
-with open('config.json', 'r') as f:
-    config = json.load(f)
+alux_version = 0.2
+schema_location = (os.path.join(os.path.dirname(__file__), "db", "schema.ddl"))
+db_location = (os.path.join(os.path.dirname(__file__), "db", "alux.sqlite"))
 
+class db():
+    """Database Access Functions."""
+
+    def __init__(self):
+        """Create DB if it doesn't exist, if it does, load it."""
+        self.openConnection()
+        c = self.conn.cursor()
+        try:
+            c.execute("SELECT * FROM alux_info WHERE key='version'")
+            self.conn.row_factory = sqlite3.Row
+        except sqlite3.OperationalError:
+            self.conn.row_factory = sqlite3.Row
+            self.createDB()
+
+    def __del__(self):
+        """Close DB class - just make sure the connection is closed."""
+        try:
+            self.closeConnection()
+        except sqlite3.ProgrammingError:
+            pass
+
+    def openConnection(self):
+        """Open a database connnection."""
+        self.conn = sqlite3.connect(db_location)
+        self.conn.row_factory = sqlite3.Row
+
+    def closeConnection(self):
+        """Closes the database connection."""
+        self.conn.commit()
+        self.conn.close()
+
+    def createDB(self):
+        """Create the Database if it doesn't exist.
+
+        Requires a schema.ddl file to exist."""
+        with open(schema_location, 'rt') as f:
+            schema = f.read()
+        self.conn.executescript(schema)
+        # Make sure to add 
+        self.update_info('vasdfersion', alux_version)
+
+
+        
 class alux():
     def __init__():
         with open('config.json', 'r') as f:

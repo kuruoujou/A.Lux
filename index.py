@@ -7,7 +7,7 @@ pwd = os.getcwd()
 if pwd + '/views/' not in TEMPLATE_PATH:
     TEMPLATE_PATH.insert(0,pwd + '/views/')
 
-cookieSig="afds0ahegagljajdfqajfidsjaindosajifdsjfaofniog"
+cookieSig="2qn3h8gew9qgew9q8fe9wq8hfeiowqpjfiopeq"
 
 with open('config.json', 'r') as f:
     config = json.load(f)

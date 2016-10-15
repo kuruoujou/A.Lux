@@ -4,6 +4,12 @@ import os, time, sys, datetime, requests, json
 with open('config.json', 'r') as f:
     config = json.load(f)
 
+class alux():
+    def __init__():
+        with open('config.json', 'r') as f:
+            self.config = json.load(f)
+        
+
 def getPlaylists(removeBackground=True):
   # Don't want to fuck around with proper xml parsing, especially with such a simple
   # schema, so we're going to string-parse this beyotch

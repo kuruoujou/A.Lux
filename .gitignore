@@ -1,6 +1,7 @@
 # ---> Python
 # A.Lux specific files
 config.json
+alux.db
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

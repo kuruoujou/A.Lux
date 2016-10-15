@@ -3,4 +3,5 @@
     "fppUrl": "http://fpp",
 	"fppUser": "admin",
     "fppPass": "",
+    "salt": "insert_random_string_here"
 }

@@ -44,8 +44,27 @@ class db():
             schema = f.read()
         self.conn.executescript(schema)
         # Make sure to add 
-        self.update_info('vasdfersion', alux_version)
+        self.updateInfo('version', alux_version)
+        self.closeConnection()
 
+    def updateInfo(self, key, value):
+        """Update the alux_info table with a given key and value.
+        If the key doesn't exist, create it."""
+        self.openConnection()
+        self.conn.execute(
+                '''select * from alux_info where key = ?''',
+                (version,))
+        output = c.fetchone()
+        if output is None:
+            self.conn.execute(
+                    '''insert into alux_info (key, value)
+                    values (?,?);''',
+                    (key, value))
+        else:
+            self.conn.execute(
+                    '''update alux_info set value=? where key=?''',
+                    (value, key))
+        self.closeConnection()
 
         
 class alux():

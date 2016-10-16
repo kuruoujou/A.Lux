@@ -22,9 +22,9 @@ def serve_static(filename):
 @get('/')
 def index():
     cookieid = request.get_cookie("alux_id", secret=cookieSig)
-    if not cookie_id:
+    if not cookieid:
         new_id = getid()
-        request.set_cookie(
+        response.set_cookie(
                 "alux_id", new_id['alux_id'], 
                 expires=new_id['expiration'], secret=cookieSig
                 )
@@ -71,7 +71,7 @@ def getplaylists():
 
 @get('/alux_id')
 def getid():
-    return {"alux_id": hashlib.sha512(uuid.uuid4()).hexdigest(), "expiration": int(time.time())+2628000}
+    return {"alux_id": hashlib.sha512(str(uuid.uuid4()).encode('utf-8')).hexdigest(), "expiration": int(time.time())+2628000}
 
 @post('/authenticate')
 def authenticate():

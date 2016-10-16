@@ -21,16 +21,17 @@ def serve_static(filename):
 # Main Web Responses
 @get('/')
 def index():
-    playingStatus, playingSong, timeRemaining = checkPlayingStatus()
-    playing = True if playingStatus != "0" else False
-    playlistName = playingSong.replace('_', ' ')
-    playable = isPlayable()
-    if not playing:
-       playlists = getPlaylists()
-    else:
-       playlists = []
-    return template('default', playing=playing, radioStation=config['radioStation'], playlistName=playlistName, timeRemaining=timeRemaining, playlists=playlists, playable=playable, error=False)
-
+    cookieid = request.get_cookie("alux_id", secret=cookieSig)
+    if not cookie_id:
+        new_id = getid()
+        request.set_cookie(
+                "alux_id", new_id['alux_id'], 
+                expires=new_id['expiration'], secret=cookieSig
+                )
+    playcheck = alux.checkPlayPossible()
+    playlists = alux.getPlaylists()
+    return template('default', radioStation = config['radioStation'], userinfo=userinfo, playing=playcheck, playlists=playlists, error=False)
+    
 # API Endpoints
 @put('/play')
 def play():

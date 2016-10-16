@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from bottle import route, get, run, default_app, template, static_file, post, request, response, redirect, TEMPLATE_PATH
 from alux import alux 
-import os, time, sys, datetime, requests, json
+import os, time, sys, datetime, requests, json, uuid, hashlib
 
 pwd = os.getcwd()
 #Add the template path if it's not there
@@ -61,19 +61,23 @@ def status():
 @get('/get')
 def getplaylists():
     hidden = False
-    cookie_id = request.cookies.alux_id
+    cookie_id = request.query.alux_id
     if alux.checkUserAuthed(cookie_id):
         hidden = True
     playing = alux.getPlaylists(hidden=hidden)
     response.status = 200
     return playing
 
+@get('/alux_id')
+def getid():
+    return hashlib.sha512(uuid.uuid4()).hexdigest()
+
 @post('/authenticate')
 def authenticate():
     this_request = request.json
     myid = alux.checkAuth(this_request['username'], this_request['password'])
     if myid:
-        alux.setCookieToUid(myid, this_request['cookie_id'], this_request['expiration'])
+        alux.setCookieToUid(myid, this_request['alux_id'], this_request['expiration'])
         response.status = 205
         return
     response.status = 401
@@ -81,7 +85,7 @@ def authenticate():
 
 @put('/add')
 def add():
-    cookie_id = request.cookies.alux_id
+    cookie_id = request.query.alux_id
     if not alux.checkUserAuthed(cookie_id):
         response.status = 401
         return
@@ -93,7 +97,7 @@ def add():
 
 @delete('/remove')
 def remove():
-    cookie_id = request.cookies.alux_id
+    cookie_id = request.query.alux_id
     if not alux.checkUserAuthed(cookie_id):
         response.status = 401
         return
@@ -104,7 +108,7 @@ def remove():
 
 @get('/listnew')
 def listnew():
-    cookie_id = request.cookies.alux_id
+    cookie_id = request.query.alux_id
     if not alux.checkUserAuthed(cookie_id):
         response.status = 401
         return
@@ -114,7 +118,7 @@ def listnew():
 
 @put('/modify')
 def modify():
-    cookie_id = request.cookies.alux_id
+    cookie_id = request.query.alux_id
     if not alux.checkUserAuthed(cookie_id):
         response.status = 401
         return

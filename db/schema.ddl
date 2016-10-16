@@ -15,7 +15,7 @@ create table songs (
     artist      text,
     genre       text,
     from        text,
-    length      text,
+    image_url   text,
     hidden      integer,
     background  integer,
     playcount   integer

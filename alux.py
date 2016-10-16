@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import os, time, sys, datetime, requests, json
+import os, time, sys, datetime, requests, json, sqlite3
+import xml.etree.ElementTree as et
 
 alux_version = 0.2
 schema_location = (os.path.join(os.path.dirname(__file__), "db", "schema.ddl"))
@@ -13,7 +14,7 @@ class db():
         self.openConnection()
         c = self.conn.cursor()
         try:
-            c.execute("SELECT * FROM alux_info WHERE key='version'")
+            c.execute("SELECT * FROM alux_info WHERE key='version';")
             self.conn.row_factory = sqlite3.Row
         except sqlite3.OperationalError:
             self.conn.row_factory = sqlite3.Row
@@ -30,11 +31,13 @@ class db():
         """Open a database connnection."""
         self.conn = sqlite3.connect(db_location)
         self.conn.row_factory = sqlite3.Row
+        return
 
     def closeConnection(self):
         """Closes the database connection."""
         self.conn.commit()
         self.conn.close()
+        return
 
     def createDB(self):
         """Create the Database if it doesn't exist.
@@ -46,75 +49,237 @@ class db():
         # Make sure to add 
         self.updateInfo('version', alux_version)
         self.closeConnection()
+        return
 
     def updateInfo(self, key, value):
         """Update the alux_info table with a given key and value.
         If the key doesn't exist, create it."""
         self.openConnection()
-        self.conn.execute(
-                '''select * from alux_info where key = ?''',
+        c = self.conn.cursor()
+        c.execute(
+                '''SELECT * FROM alux_info WHERE key = ?;''',
                 (version,))
         output = c.fetchone()
         if output is None:
             self.conn.execute(
-                    '''insert into alux_info (key, value)
-                    values (?,?);''',
+                    '''INSERT INTO alux_info (key, value)
+                    VALUES (?,?);''',
                     (key, value))
         else:
             self.conn.execute(
-                    '''update alux_info set value=? where key=?''',
+                    '''UPDATE alux_info SET value=? WHERE key=?;''',
                     (value, key))
         self.closeConnection()
+        return
+
+    def getUser(self, uid=None, username=None, cookie_id=None):
+        """Gets user information based on some value."""
+        self.openConnection()
+        c = self.conn.cursor()
+        if uid:
+            c.execute(
+                    '''SELECT * FROM users WHERE id=?;''',
+                    (uid,))
+        elif username:
+            c.execute(
+                    '''SELECT * FROM users WHERE username=?;''',
+                    (username,))
+        elif cookie_id:
+            c.execute(
+                    '''SELECT * FROM users WHERE cookie_id=?;''',
+                    (cookie_id,))
+        output = c.fetchone()
+        output = dict(output) if output is not None else None
+        self.closeConnection()
+        return output
+
+    def modifyUser(self, uid, userInfo):
+        """Changes a user's information based on their UID.
+        Changes the entire user row, userInfo should be a modified dictionary
+        based on the output of getUser."""
+        self.openConnection()
+        if 'cookie_id' not in userInfo:
+            userInfo['cookie_id'] = None
+        if 'expiration' not in userInfo:
+            userInfo['expiration'] = None
+        self.conn.execute(
+                '''UPDATE users SET username=?, password=?,
+                cookie_id=?, expiration=? WHERE uid=uid''',
+                ( userInfo['username'], userInfo['password'],
+                  userInfo['cookie_id'], userInfo['expiration']))
+        self.closeConnection()
+        return
+
+    def getSongs(self, hidden=False, ident=None, playlist=None):
+        """Get songs in the database. If an ID or playlist is provided,
+        just get that song. If hidden is false, then only
+        return non-hidden items."""
+        self.openConnection()
+        c = self.conn.cursor()
+        if not hidden and ident:
+            c.execute(
+                '''SELECT * FROM songs WHERE hidden=0 AND id=?;''',
+                (ident))
+        elif not hidden:
+            c.execute(
+                '''SELECT * FROM songs WHERE hidden=0;'''
+                )
+        else:
+            c.execute(
+                '''SELECT * FROM songs;'''
+                )
+        output = c.fetchall()
+        output = [dict(x) for x in output]
+        self.closeConnection()
+        return output
+
+    def getSong(self, ident=None, playlist=None):
+        """Get a single song from the database."""
+        return self.getSongs(hidden=True, ident=ident, playlist=playlist)
+
+    def addSong(self, playlist, title, artist, genre, thing_from=None, hidden=False, background=False):
+        """Add a song to the database."""
+        self.openConection()
+        self.conn.execute(
+                '''INSERT INTO songs
+                (playlist, title, artist, genre, from, hidden, background)
+                VALUES (?,?,?,?,?,?,?);''', 
+                (playlist, title, artist, genre, thing_from, hidden, background)
+                )
+        self.closeConnection()
+        return
+
+    def removeSong(self, ident):
+        """Removes a song from the database."""
+        self.openConnection()
+        self.conn.execute(
+                '''DELETE FROM songs WHERE id=?;''', (ident)
+                )
+        self.closeConnection()
+        return
+
+    def modifySong(self, ident, songInfo):
+        """Modifies a song in the database. songInfo is a modified
+        dictionary originally from getSongs."""
+        self.openConnection()
+        self.conn.execute(
+                '''UPDATE songs SET playlist=?, title=?, artist=?, genre=?,
+                from=?, hidden=?, background=? WHERE id=?''',
+                (songInfo['playlist'], songInfo['title'], songInfo['artist'],
+                    songInfo['genre'], songInfo['from'], songInfo['hidden'],
+                    songInfo['background'], songInfo['id'])
+                )
+        self.closeConnection()
+        return
 
         
 class alux():
     def __init__():
         with open('config.json', 'r') as f:
             self.config = json.load(f)
-        
+        self.db = db()
 
-def getPlaylists(removeBackground=True):
-  # Don't want to fuck around with proper xml parsing, especially with such a simple
-  # schema, so we're going to string-parse this beyotch
-  r = requests.get("%s/fppxml.php?command=getPlayLists"%(config['fppUrl'],), auth=(config['fppUser'], config['fppPass']))
-  output = r.text.strip().strip('<Playlists>').strip('</Playlists>')
-  playlists = output.split('</Playlist><Playlist>')
-  if removeBackground:
-    playlists.remove('Background')
-  outputLists = []
-  for i in playlists:
-    outputLists.append({'title':i,'displayTitle':i.replace('_',' ')})
-  return outputLists
+    def checkAuth(self, username, password):
+        """Checks if a user gives the correct username and password.
+        Passwords are a salted, hashed, sha256 string in the db.
+        """
+        userInfo = self.db.getUser(username=username)
+        if userInfo:
+            if userInfo['password'] == hashlib.sha256(
+                    str.encode("{0}{1}".format(password, config['salt']))
+                    ).hexdigest():
+                return userInfo['id']
+        return False
 
-def checkPlayingStatus(ignoreBackground=True):
-  r = requests.get("%s/fppxml.php?command=getFPPstatus"%(config['fppUrl'],), auth=(config['fppUser'], config['fppPass']))
-  output = r.text.strip()
-  playingStatus = output.split('<fppStatus>')[1].split('</fppStatus>')[0]
-  if playingStatus != "0":
-    playingSong = output.split('<CurrentPlaylist>')[1].split('</CurrentPlaylist>')[0]
-    playingRemaining = output.split('<SecondsRemaining>')[1].split('</SecondsRemaining>')[0]
-  else:
-    playingSong = "None"
-    playingRemaining = "0"
-  if ignoreBackground and playingSong == "Background":
-    playingStatus = "0"
-  return playingStatus, playingSong, playingRemaining
+    def setCookieToUid(self, uid, cookie_id, expiration):
+        """Sets a given cookie ID, which should always be set on
+        the client, to a given user, so they don't have to log in again."""
+        userInfo = self.db.getUser(uid=uid)
+        userInfo['cookie_id'] = cookie_id
+        userInfo['expiration'] = expiration
+        self.db.modifyUser(uid=uid, userInfo)
+        return
 
-def playPlaylist(playlist, repeat=False):
-  if repeat:
-    r = requests.get("%s/fppxml.php?command=startPlaylist&playList=%s&repeat=checked"%(config['fppUrl'],playlist), auth=(config['fppUser'], config['fppPass']))
-  else:
-    r = requests.get("%s/fppxml.php?command=startPlaylist&playList=%s"%(config['fppUrl'],playlist), auth=(config['fppUser'], config['fppPass']))
+    def getPlaylists(self, hidden=False):
+        """Get all playlist in the database, if hidden is false, do not return
+        hidden playlists."""
+        return db.getSongs(hidden=hidden, ident=None)
 
-def stopPlaylist():
-  r = requests.get("%s/fppxml.php?command=stopNow"%(config['fppUrl'],), auth=(config['fppUser'], config['fppPass']))
+    def getNewPlaylists(self):
+        """Gets all playlists from FPP that are not already in the database."""
+        current = self.getPlaylists(hidden=True)
+        r = requests.get(
+                "{0}/fppxml.php?command=getPlayLists".format(self.config['fppUrl']),
+                auth=(self.config['fppUser'], self.config['fppPass'])
+                )
+        root = et.fromstring(r.text)
+        playlists = [child.text for child in root]
+        return playlists
 
-# Check if we are in the time frame for shows
-def isPlayable():
-  os.environ["TZ"]=config['timezone']
-  time.tzset()
-  currentHour = datetime.datetime.now().hour
-  if config['startHour'] > config['endHour']:
-    config['endHour'] = config['endHour'] + 24
-  playable = True if config ['startHour'] <= currentHour and config['endHour'] > currentHour else False
-  return playable
+    def checkPlayingStatus(self, background=False):
+        """Checks if something is playing. If background is false, do not return
+        background playlists."""
+        r = requests.get(
+                "{0}/fppxml.php?command=getPlayLists".format(self.config['fppUrl']),
+                auth=(self.config['fppUser'], self.config['fppPass'])
+                )
+        root = et.fromstring(r.text)
+        status = root.find("./fppStatus").text
+        if status != "0":
+            playlist = root.find("./CurrentPlaylist").text
+            time_remaining = int(root.find("./SecondsRemaining").text)
+            time_since_start = int(root.find("./SecondsPlayed").text)
+        else:
+            return {"playing": False}
+        song = db.getSong(playlist=playlist)
+        if not background and song['background'] == 1:
+            return {"playing": False}
+        song['playing'] = True
+        song['time_remaining'] = time_remaining
+        song['time_since_start'] = time_since_start
+        return song
+
+    def checkPlayPossible(self):
+        """Checks if we can play something. Currently assumes play is possible
+        if any background playlist is playing, otherwise assumes no. This might
+        need to change to be a configurable time period, later. If we're playing
+        a song, return the song instead."""
+        song = self.checkPlayingStatus(background=True)
+        if not song['playing']:
+            return False
+        elif song['background'] != 1:
+            return song
+        return True
+
+    def playPlaylist(self, ident=None, playlist=None, repeat=False):
+        """Plays a given playlist given it's db ID or playlist name.
+        If repeat is given, repeats the song."""
+        if ident:
+            playlist = db.getSong(ident=ident)['playlist']
+        if repeat:
+            requests.get(
+                    "{0}/fppxml.php?command=startPlaylist&playlist={1}&repeat=checked".format(
+                        self.config['fppUrl'], playlist),
+                    auth=(self.config['fppUser'], self.config['fppPass'])
+                    )
+        else:
+            requests.get(
+                    "{0}/fppxml.php?command=startPlaylist&playlist={1}".format(
+                        self.config['fppUrl'], playlist),
+                    auth=(self.config['fppUser'], self.config['fppPass'])
+                    )
+        return
+
+    def stopPlaylist(self):
+        """Stops all playlists from playing."""
+        requests.get(
+                "{0}/fppxml.php?command=stopNow".format(
+                    config['fppUrl']),
+                auth=(config['fppUser'], config['fppPass'])
+                )
+        return
+
+    def addPlaylist(self, playlist):
+        """Adds a playlist to the database."""
+
+

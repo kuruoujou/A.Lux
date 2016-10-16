@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from bottle import route, get, run, default_app, template, static_file, post,  put, delete, request, response, redirect, TEMPLATE_PATH
-from alux import alux 
-import os, time, sys, datetime, requests, json, uuid, hashlib
+import alux, os, time, sys, datetime, requests, json, uuid, hashlib
 
 pwd = os.getcwd()
 #Add the template path if it's not there
@@ -12,6 +11,8 @@ cookieSig="2qn3h8gew9qgew9q8fe9wq8hfeiowqpjfiopeq"
 
 with open('config.json', 'r') as f:
     config = json.load(f)
+
+alux = alux.alux()
 
 #Root and static stuff
 @get('/static/<filename:path>')

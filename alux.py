@@ -35,14 +35,18 @@ class db():
 
     def closeConnection(self):
         """Closes the database connection."""
-        self.conn.commit()
-        self.conn.close()
+        try:
+            self.conn.commit()
+            self.conn.close()
+        except sqlite3.ProgrammingError:
+            pass
         return
 
     def createDB(self):
         """Create the Database if it doesn't exist.
 
         Requires a schema.ddl file to exist."""
+        self.openConnection()
         with open(schema_location, 'rt') as f:
             schema = f.read()
         self.conn.executescript(schema)
@@ -58,7 +62,7 @@ class db():
         c = self.conn.cursor()
         c.execute(
                 '''SELECT * FROM alux_info WHERE key = ?;''',
-                (version,))
+                (value,))
         output = c.fetchone()
         if output is None:
             self.conn.execute(
@@ -72,7 +76,7 @@ class db():
         self.closeConnection()
         return
 
-    def getUser(self, uid=None, username=None, cookie_id=None):
+    def getUser(self, uid=None, username=None, alux_id=None):
         """Gets user information based on some value."""
         self.openConnection()
         c = self.conn.cursor()
@@ -84,10 +88,10 @@ class db():
             c.execute(
                     '''SELECT * FROM users WHERE username=?;''',
                     (username,))
-        elif cookie_id:
+        elif alux_id:
             c.execute(
-                    '''SELECT * FROM users WHERE cookie_id=?;''',
-                    (cookie_id,))
+                    '''SELECT * FROM users WHERE alux_id=?;''',
+                    (alux_id,))
         output = c.fetchone()
         output = dict(output) if output is not None else None
         self.closeConnection()
@@ -98,15 +102,15 @@ class db():
         Changes the entire user row, userInfo should be a modified dictionary
         based on the output of getUser."""
         self.openConnection()
-        if 'cookie_id' not in userInfo:
-            userInfo['cookie_id'] = None
+        if 'alux_id' not in userInfo:
+            userInfo['alux_id'] = None
         if 'expiration' not in userInfo:
             userInfo['expiration'] = None
         self.conn.execute(
                 '''UPDATE users SET username=?, password=?,
-                cookie_id=?, expiration=? WHERE uid=uid''',
+                alux_id=?, expiration=? WHERE uid=uid''',
                 ( userInfo['username'], userInfo['password'],
-                  userInfo['cookie_id'], userInfo['expiration']))
+                  userInfo['alux_id'], userInfo['expiration']))
         self.closeConnection()
         return
 
@@ -146,7 +150,7 @@ class db():
         self.openConection()
         self.conn.execute(
                 '''INSERT INTO songs
-                (playlist, title, artist, genre, from, image_url, hidden, background)
+                (playlist, title, artist, genre, thing_from, image_url, hidden, background)
                 VALUES (?,?,?,?,?,?,?,?);''', 
                 (playlist, title, artist, genre, thing_from, image_url, hidden, background)
                 )
@@ -168,9 +172,9 @@ class db():
         self.openConnection()
         self.conn.execute(
                 '''UPDATE songs SET playlist=?, title=?, artist=?, genre=?,
-                from=?, image_url=?, hidden=?, background=? WHERE id=?''',
+                thing_from=?, image_url=?, hidden=?, background=? WHERE id=?''',
                 (songInfo['playlist'], songInfo['title'], songInfo['artist'],
-                    songInfo['genre'], songInfo['from'], songInfo['image_url'], 
+                    songInfo['genre'], songInfo['thing_from'], songInfo['image_url'], 
                     songInfo['hidden'], songInfo['background'], songInfo['id'])
                 )
         self.closeConnection()
@@ -195,28 +199,28 @@ class alux():
                 return userInfo['id']
         return False
 
-    def setCookieToUid(self, uid, cookie_id, expiration):
+    def setCookieToUid(self, uid, alux_id, expiration):
         """Sets a given cookie ID, which should always be set on
         the client, to a given user, so they don't have to log in again."""
         userInfo = self.db.getUser(uid=uid)
-        userInfo['cookie_id'] = cookie_id
+        userInfo['alux_id'] = alux_id
         userInfo['expiration'] = expiration
         self.db.modifyUser(uid, userInfo)
         return
 
-    def checkUserAuthed(self, cookie_id):
+    def checkUserAuthed(self, alux_id):
         """Checks if a user is authenticated based on the cookie id they have
         set."""
-        return self.db.getUser(cookie_id=cookie_id)
+        return self.db.getUser(alux_id=alux_id)
 
     def getPlaylists(self, hidden=False):
         """Get all playlist in the database, if hidden is false, do not return
         hidden playlists."""
-        return db.getSongs(hidden=hidden, ident=None)
+        return self.db.getSongs(hidden=hidden, ident=None)
 
     def getPlaylist(self, ident=None, playlist=None):
         """Get a single playlist in the database."""
-        return db.getSong(ident=ident, playlist=playlist)
+        return self.db.getSong(ident=ident, playlist=playlist)
 
     def getNewPlaylists(self):
         """Gets all playlists from FPP that are not already in the database."""
@@ -233,7 +237,7 @@ class alux():
         """Checks if something is playing. If background is false, do not return
         background playlists."""
         r = requests.get(
-                "{0}/fppxml.php?command=getPlayLists".format(self.config['fppUrl']),
+                "{0}/fppxml.php?command=getFPPstatus".format(self.config['fppUrl']),
                 auth=(self.config['fppUser'], self.config['fppPass'])
                 )
         root = et.fromstring(r.text)
@@ -244,7 +248,7 @@ class alux():
             time_since_start = int(root.find("./SecondsPlayed").text)
         else:
             return {"playing": False}
-        song = db.getSong(playlist=playlist)
+        song = self.db.getSong(playlist=playlist)
         if not background and song['background'] == 1:
             return {"playing": False}
         song['playing'] = True
@@ -268,7 +272,7 @@ class alux():
         """Plays a given playlist given it's db ID or playlist name.
         If repeat is given, repeats the song."""
         if ident:
-            playlist = db.getSong(ident=ident)['playlist']
+            playlist = self.db.getSong(ident=ident)['playlist']
         if repeat:
             requests.get(
                     "{0}/fppxml.php?command=startPlaylist&playlist={1}&repeat=checked".format(
@@ -294,16 +298,16 @@ class alux():
 
     def addPlaylist(self, playlist, title, artist, genre, image_url=None, thing_from=None, hidden=False, background=False):
         """Adds a playlist to the database."""
-        db.addSong(playlist, title, artist, genre, image_url, thing_from, hidden, background)
+        self.db.addSong(playlist, title, artist, genre, image_url, thing_from, hidden, background)
         return
 
     def removePlaylist(self, ident):
         """Removes a playlist from the database."""
-        db.removeSong(ident)
+        self.db.removeSong(ident)
         return
 
     def modifyPlaylist(self, ident, songInfo):
         """Modifies a song in the database. songInfo is a modified dictionary
         originally from getPlaylist"""
-        db.modifySong(ident, songInfo)
+        self.db.modifySong(ident, songInfo)
         return

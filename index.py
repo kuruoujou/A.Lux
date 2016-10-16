@@ -22,16 +22,18 @@ def serve_static(filename):
 # Main Web Responses
 @get('/')
 def index():
-    cookieid = request.get_cookie("alux_id", secret=cookieSig)
-    if not cookieid:
+    alux_id = request.get_cookie("alux_id", secret=cookieSig)
+    userInfo = alux.checkUserAuthed(alux_id)
+    if not alux_id or not userInfo:
         new_id = getid()
         response.set_cookie(
                 "alux_id", new_id['alux_id'], 
                 expires=new_id['expiration'], secret=cookieSig
                 )
+        userInfo = {'username': None, 'password': None, 'alux_id': new_id['alux_id'], 'expiration': new_id['expiration']}
     playcheck = alux.checkPlayPossible()
     playlists = alux.getPlaylists()
-    return template('default', radioStation = config['radioStation'], userinfo=userinfo, playing=playcheck, playlists=playlists, error=False)
+    return template('default', radioStation = config['radioStation'], userInfo=userInfo, playing=playcheck, playlists=playlists, error=False)
     
 # API Endpoints
 @put('/play')
@@ -63,8 +65,8 @@ def status():
 @get('/get')
 def getplaylists():
     hidden = False
-    cookie_id = request.query.alux_id
-    if alux.checkUserAuthed(cookie_id):
+    alux_id = request.query.alux_id
+    if alux.checkUserAuthed(alux_id):
         hidden = True
     playing = alux.getPlaylists(hidden=hidden)
     response.status = 200
@@ -87,8 +89,8 @@ def authenticate():
 
 @put('/add')
 def add():
-    cookie_id = request.query.alux_id
-    if not alux.checkUserAuthed(cookie_id):
+    alux_id = request.query.alux_id
+    if not alux.checkUserAuthed(alux_id):
         response.status = 401
         return
     this_request = request.json
@@ -99,8 +101,8 @@ def add():
 
 @delete('/remove')
 def remove():
-    cookie_id = request.query.alux_id
-    if not alux.checkUserAuthed(cookie_id):
+    alux_id = request.query.alux_id
+    if not alux.checkUserAuthed(alux_id):
         response.status = 401
         return
     this_request = request.json
@@ -110,8 +112,8 @@ def remove():
 
 @get('/listnew')
 def listnew():
-    cookie_id = request.query.alux_id
-    if not alux.checkUserAuthed(cookie_id):
+    alux_id = request.query.alux_id
+    if not alux.checkUserAuthed(alux_id):
         response.status = 401
         return
     playlists = alux.getNewPlaylists()
@@ -120,8 +122,8 @@ def listnew():
 
 @put('/modify')
 def modify():
-    cookie_id = request.query.alux_id
-    if not alux.checkUserAuthed(cookie_id):
+    alux_id = request.query.alux_id
+    if not alux.checkUserAuthed(alux_id):
         response.status = 401
         return
     this_request = request.json

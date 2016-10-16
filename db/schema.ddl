@@ -14,7 +14,7 @@ create table songs (
     title       text,
     artist      text,
     genre       text,
-    from        text,
+    thing_from  text,
     image_url   text,
     hidden      integer,
     background  integer,
@@ -26,6 +26,6 @@ create table users(
 	id			integer primary key autoincrement not null,
 	username		text,
 	password		text,
-    cookie_id       text,
+    alux_id	        text,
     expiration      date
 );

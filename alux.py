@@ -178,7 +178,7 @@ class db():
 
         
 class alux():
-    def __init__():
+    def __init__(self):
         with open('config.json', 'r') as f:
             self.config = json.load(f)
         self.db = db()

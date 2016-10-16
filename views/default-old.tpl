@@ -35,6 +35,48 @@
       </div>
     </nav>
     <div class="container-fluid">
+      <section class="description" id="description">
+          %if error:
+          <h1>{{error}}</h1>
+          %end
+          %if not playing and playable:
+          <h1>Tune your radio to {{radioStation}}, select a song below, and enjoy!</h1>
+          %elif not playable:
+          <h1>The show is only playable between roughly sundown and midnight, sorry about that! Thanks for stopping by!</h1>
+          %else:
+          <h1>Currently playing {{playlistName}}, about {{timeRemaining}} seconds left.</h1>
+          %end
+      </section>
+      %if not playing and playable:
+      <section class="choices" id="choices">
+        %iteration=0
+        %for playlist in playlists:
+      	<div class="row">
+                %if iteration==0:
+		<div class="song top col-md-12">
+                %iteration=1
+                %else:
+                <div class="song col-md-12">
+                %end
+			<a href="/play?song={{playlist['title']}}">{{playlist['displayTitle']}}</a>
+		</div>
+	</div>
+        %end
+      </section>
+      %elif playable:
+      <section class="stop" id="stop">
+        <div class="row">
+              <div class="song top col-md-12">
+                  <a href="/stop">Tap to stop the currently playing song.</a>
+              </div>
+        </div> 
+      </section>
+      %end
+      %if playable:
+      <section class="description" id="problems">
+	  <small>Buttons don't work? Light display look broken or frozen? Let me know: <a href="mailto:helloThere+kld@spencerjulian.com">helloThere+kld@spencerjulian.com</a></small>
+      </section>
+      %end
     </div><!-- /.container -->
 
 

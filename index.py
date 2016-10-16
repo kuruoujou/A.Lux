@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from bottle import route, get, run, default_app, template, static_file, post, request, response, redirect, TEMPLATE_PATH
+from bottle import route, get, run, default_app, template, static_file, post,  put, delete, request, response, redirect, TEMPLATE_PATH
 from alux import alux 
 import os, time, sys, datetime, requests, json, uuid, hashlib
 

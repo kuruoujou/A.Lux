@@ -36,3 +36,9 @@ body {
     height: 100%;
     color: #3399ff;
 }
+
+#login_error{
+	color: #ff0000;
+	text-align: center;
+	width: 100%;
+}

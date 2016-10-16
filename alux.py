@@ -120,6 +120,10 @@ class db():
             c.execute(
                 '''SELECT * FROM songs WHERE hidden=0 AND id=?;''',
                 (ident))
+        elif not hidden and playlist:
+            c.execute(
+                '''SELECT * FROM songs WHERE hidden=0 AND playlist=?;''',
+                (playlist))
         elif not hidden:
             c.execute(
                 '''SELECT * FROM songs WHERE hidden=0;'''
@@ -137,14 +141,14 @@ class db():
         """Get a single song from the database."""
         return self.getSongs(hidden=True, ident=ident, playlist=playlist)
 
-    def addSong(self, playlist, title, artist, genre, thing_from=None, hidden=False, background=False):
+    def addSong(self, playlist, title, artist, genre, image_url=None, thing_from=None, hidden=False, background=False):
         """Add a song to the database."""
         self.openConection()
         self.conn.execute(
                 '''INSERT INTO songs
-                (playlist, title, artist, genre, from, hidden, background)
-                VALUES (?,?,?,?,?,?,?);''', 
-                (playlist, title, artist, genre, thing_from, hidden, background)
+                (playlist, title, artist, genre, from, image_url, hidden, background)
+                VALUES (?,?,?,?,?,?,?,?);''', 
+                (playlist, title, artist, genre, thing_from, image_url, hidden, background)
                 )
         self.closeConnection()
         return
@@ -164,10 +168,10 @@ class db():
         self.openConnection()
         self.conn.execute(
                 '''UPDATE songs SET playlist=?, title=?, artist=?, genre=?,
-                from=?, hidden=?, background=? WHERE id=?''',
+                from=?, image_url=?, hidden=?, background=? WHERE id=?''',
                 (songInfo['playlist'], songInfo['title'], songInfo['artist'],
-                    songInfo['genre'], songInfo['from'], songInfo['hidden'],
-                    songInfo['background'], songInfo['id'])
+                    songInfo['genre'], songInfo['from'], songInfo['image_url'], 
+                    songInfo['hidden'], songInfo['background'], songInfo['id'])
                 )
         self.closeConnection()
         return
@@ -200,10 +204,19 @@ class alux():
         self.db.modifyUser(uid=uid, userInfo)
         return
 
+    def checkUserAuthed(self, cookie_id):
+        """Checks if a user is authenticated based on the cookie id they have
+        set."""
+        return self.db.getUser(cookie_id=cookie_id)
+
     def getPlaylists(self, hidden=False):
         """Get all playlist in the database, if hidden is false, do not return
         hidden playlists."""
         return db.getSongs(hidden=hidden, ident=None)
+
+    def getPlaylist(self, ident=None, playlist=None):
+        """Get a single playlist in the database."""
+        return db.getSong(ident=ident, playlist=playlist)
 
     def getNewPlaylists(self):
         """Gets all playlists from FPP that are not already in the database."""
@@ -279,7 +292,18 @@ class alux():
                 )
         return
 
-    def addPlaylist(self, playlist):
+    def addPlaylist(self, playlist, title, artist, genre, image_url=None, thing_from=None, hidden=False, background=False):
         """Adds a playlist to the database."""
+        db.addSong(playlist, title, artist, genre, image_url, thing_from, hidden, background)
+        return
 
+    def removePlaylist(self, ident):
+        """Removes a playlist from the database."""
+        db.removeSong(ident)
+        return
 
+    def modifyPlaylist(self, ident, songInfo):
+        """Modifies a song in the database. songInfo is a modified dictionary
+        originally from getPlaylist"""
+        db.modifySong(ident, songInfo)
+        return

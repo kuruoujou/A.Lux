@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from bottle import route, get, run, default_app, template, static_file, post, request, response, redirect, TEMPLATE_PATH
+from alux import alux 
 import os, time, sys, datetime, requests, json
 
 pwd = os.getcwd()
@@ -12,58 +13,12 @@ cookieSig="2qn3h8gew9qgew9q8fe9wq8hfeiowqpjfiopeq"
 with open('config.json', 'r') as f:
     config = json.load(f)
 
-#Useful magic for the rest of the program
-def getPlaylists(removeBackground=True):
-  # Don't want to fuck around with proper xml parsing, especially with such a simple
-  # schema, so we're going to string-parse this beyotch
-  r = requests.get("%s/fppxml.php?command=getPlayLists"%(config['fppUrl'],), auth=(config['fppUser'], config['fppPass']))
-  output = r.text.strip().strip('<Playlists>').strip('</Playlists>')
-  playlists = output.split('</Playlist><Playlist>')
-  if removeBackground:
-    playlists.remove('Background')
-  outputLists = []
-  for i in playlists:
-    outputLists.append({'title':i,'displayTitle':i.replace('_',' ')})
-  return outputLists
-
-def checkPlayingStatus(ignoreBackground=True):
-  r = requests.get("%s/fppxml.php?command=getFPPstatus"%(config['fppUrl'],), auth=(config['fppUser'], config['fppPass']))
-  output = r.text.strip()
-  playingStatus = output.split('<fppStatus>')[1].split('</fppStatus>')[0]
-  if playingStatus != "0":
-    playingSong = output.split('<CurrentPlaylist>')[1].split('</CurrentPlaylist>')[0]
-    playingRemaining = output.split('<SecondsRemaining>')[1].split('</SecondsRemaining>')[0]
-  else:
-    playingSong = "None"
-    playingRemaining = "0"
-  if ignoreBackground and playingSong == "Background":
-    playingStatus = "0"
-  return playingStatus, playingSong, playingRemaining
-
-def playPlaylist(playlist, repeat=False):
-  if repeat:
-    r = requests.get("%s/fppxml.php?command=startPlaylist&playList=%s&repeat=checked"%(config['fppUrl'],playlist), auth=(config['fppUser'], config['fppPass']))
-  else:
-    r = requests.get("%s/fppxml.php?command=startPlaylist&playList=%s"%(config['fppUrl'],playlist), auth=(config['fppUser'], config['fppPass']))
-
-def stopPlaylist():
-  r = requests.get("%s/fppxml.php?command=stopNow"%(config['fppUrl'],), auth=(config['fppUser'], config['fppPass']))
-
-# Check if we are in the time frame for shows
-def isPlayable():
-  os.environ["TZ"]=config['timezone']
-  time.tzset()
-  currentHour = datetime.datetime.now().hour
-  if config['startHour'] > config['endHour']:
-    config['endHour'] = config['endHour'] + 24
-  playable = True if config ['startHour'] <= currentHour and config['endHour'] > currentHour else False
-  return playable
-
 #Root and static stuff
 @get('/static/<filename:path>')
 def serve_static(filename):
     return static_file(filename, root=pwd+'/static/')
 
+# Main Web Responses
 @get('/')
 def index():
     playingStatus, playingSong, timeRemaining = checkPlayingStatus()
@@ -76,35 +31,97 @@ def index():
        playlists = []
     return template('default', playing=playing, radioStation=config['radioStation'], playlistName=playlistName, timeRemaining=timeRemaining, playlists=playlists, playable=playable, error=False)
 
-@get('/play')
-def playSong():
-    requestedPlaylist = request.query.song
-    playingStatus, playingSong, timeRemaining = checkPlayingStatus(ignoreBackground=False)
-    playable = isPlayable()
-    playlistName = playingSong.replace('_', ' ')
-    playing = True if playingStatus != "0" else False
-    if not playing:
-       playlists = getPlaylists()
-    else:
-       playlists = []
-    if playing and playingSong != "Background":
-      return template('default', playing=playing, radioStation=config['radioStation'], playlistName=playlistName, timeRemaining=timeRemaining, playlists=playlists, playable=playable, error="Please wait until the current song is over before starting another song.")
-    elif playing and playingSong == "Background":
-      stopPlaylist()
-    playPlaylist(requestedPlaylist)
-    redirect("/")
+# API Endpoints
+@put('/play')
+def play():
+    this_request = request.json
+    playcheck = alux.checkPlayPossible()
+    if playcheck and not isinstance(playcheck, dict):
+        if getPlaylist(ident=this_request['id']):
+            alux.playPlaylist(ident=this_request['id'], repeat=this_request['repeat'])
+            response.status = 205
+            return
+        response.status = 404
+        return
+    response.status = 409
+    return
 
-@get('/stop')
-def stopSong():
-    playingStatus, playingSong, timeRemaining = checkPlayingStatus(ignoreBackground=False)
-    if playingStatus != "0":
-       stopPlaylist()
-    redirect("/")
+@delete('/stop')
+def stop():
+    alux.stopPlaylist()
+    response.status = 205
+    return
 
-#Test directory.
-@get('/test')
-def outputTest():
-    return "successful test."
+@get('/status')
+def status():
+    playing = alux.checkPlayingStatus()
+    reponse.status = 200
+    return playing
+
+@get('/get')
+def getplaylists():
+    hidden = False
+    cookie_id = request.cookies.alux_id
+    if alux.checkUserAuthed(cookie_id):
+        hidden = True
+    playing = alux.getPlaylists(hidden=hidden)
+    response.status = 200
+    return playing
+
+@post('/authenticate')
+def authenticate():
+    this_request = request.json
+    myid = alux.checkAuth(this_request['username'], this_request['password'])
+    if myid:
+        alux.setCookieToUid(myid, this_request['cookie_id'], this_request['expiration'])
+        response.status = 205
+        return
+    response.status = 401
+    return
+
+@put('/add')
+def add():
+    cookie_id = request.cookies.alux_id
+    if not alux.checkUserAuthed(cookie_id):
+        response.status = 401
+        return
+    this_request = request.json
+    alux.addPlaylist(this_request['playlist'], this_request['title'], this_request['artist'], this_request['genre'], this_request['image_url'], this_request['thing_from'], this_request['hidden'], this_request['background'])
+    playlist = alux.getPlaylist(playlist=this_request['playlist'])
+    response.status = 401
+    return {'id': playlist['id']} 
+
+@delete('/remove')
+def remove():
+    cookie_id = request.cookies.alux_id
+    if not alux.checkUserAuthed(cookie_id):
+        response.status = 401
+        return
+    this_request = request.json
+    alux.removePlaylist(this_request['id'])
+    response.status = 204
+    return
+
+@get('/listnew')
+def listnew():
+    cookie_id = request.cookies.alux_id
+    if not alux.checkUserAuthed(cookie_id):
+        response.status = 401
+        return
+    playlists = alux.getNewPlaylists()
+    response.status = 200
+    return {'playlists':playlists}
+
+@put('/modify')
+def modify():
+    cookie_id = request.cookies.alux_id
+    if not alux.checkUserAuthed(cookie_id):
+        response.status = 401
+        return
+    this_request = request.json
+    alux.modifyPlaylist(this_request['id'], this_request)
+    response.status = 201
+    return {'id': this_request['id']}
 
 if __name__=="__main__":
     run(host="0.0.0.0",port="8081")

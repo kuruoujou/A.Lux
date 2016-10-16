@@ -193,7 +193,7 @@ class alux():
         """
         userInfo = self.db.getUser(username=username)
         if userInfo:
-            if userInfo['password'] == hashlib.sha256(
+            if userInfo['password'] == hashlib.sha512(
                     str.encode("{0}{1}".format(password, config['salt']))
                     ).hexdigest():
                 return userInfo['id']

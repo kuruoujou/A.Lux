@@ -70,7 +70,7 @@ def getplaylists():
 
 @get('/alux_id')
 def getid():
-    return hashlib.sha512(uuid.uuid4()).hexdigest()
+    return {"alux_id": hashlib.sha512(uuid.uuid4()).hexdigest(), "expiration": int(time.time())+2628000}
 
 @post('/authenticate')
 def authenticate():

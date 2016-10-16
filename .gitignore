@@ -1,7 +1,7 @@
 # ---> Python
 # A.Lux specific files
 config.json
-alux.db
+alux.sqlite
 docker-compose.yml
 Dockerfile*
 

@@ -3,6 +3,7 @@
 config.json
 alux.db
 docker-compose.yml
+Dockerfile*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

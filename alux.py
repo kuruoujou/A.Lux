@@ -201,7 +201,7 @@ class alux():
         userInfo = self.db.getUser(uid=uid)
         userInfo['cookie_id'] = cookie_id
         userInfo['expiration'] = expiration
-        self.db.modifyUser(uid=uid, userInfo)
+        self.db.modifyUser(uid, userInfo)
         return
 
     def checkUserAuthed(self, cookie_id):

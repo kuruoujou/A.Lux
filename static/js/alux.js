@@ -128,7 +128,7 @@ $(document).ready(function(){
 	});
 
     //Play a song when pressed, and if possible.
-    $("#choices".on('click', '.playsong', function(){
+    $("#choices").on('click', '.playsong', function(){
         $("#choices").empty();
         $("#description").empty();
         var toPlay = {
@@ -144,11 +144,13 @@ $(document).ready(function(){
             contentType: 'application/json',
             dataType: 'json',
             url: '/play?alux_id='.concat($.cookie("alux_id")),
+			data: JSON.stringify(toPlay),
             beforeSend: function(){                                              
                 $("#choices").html("<img src='static/images/load.gif'>");    
             },                                                                   
             statusCode: {                                                        
                 205: function(){
+					$("#choices").empty();
                     if (toPlay.repeat) {
                         display_main_page();
                     } else {
@@ -275,6 +277,6 @@ function display_out_of_bounds_page(){
 }
 
 function display_media_page(){
-    $("#description").html("<h1>Playing a song somewhere.");
+    $("#description").html("<h1>Playing a song somewhere.</h1>");
 	console.log("Not yet implemented.");
 }

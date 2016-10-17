@@ -47,7 +47,7 @@ def play():
     this_request = request.json
     playcheck = alux.checkPlayPossible()
     if playcheck:
-        if getPlaylist(ident=this_request['id']):
+        if alux.getPlaylist(ident=this_request['id']):
             alux.playPlaylist(ident=this_request['id'], repeat=this_request['repeat'])
             response.status = 205
             return
@@ -57,7 +57,7 @@ def play():
         playstatus = alux.checkPlayingStatus()
         alux_id = request.query.alux_id
         if playstatus['playing'] == False and alux.checkUserAuthed(alux_id):
-            if getPlaylist(ident=this_request['id']):
+            if alux.getPlaylist(ident=this_request['id']):
                 alux.playPlaylist(ident=this_request['id'], repeat=this_request['repeat'])
                 response.status = 205
                 return

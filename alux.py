@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os, requests, json, sqlite3, hashlib
 from PIL import Image
-from StringIO import StringIO
+from io import StringIO
 from goldfinch import validFileName as vfn
 import xml.etree.ElementTree as et
 

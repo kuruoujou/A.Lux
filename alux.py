@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 import os, requests, json, sqlite3, hashlib
 from PIL import Image
-from io import StringIO
+from io import BytesIO
 from goldfinch import validFileName as vfn
 import xml.etree.ElementTree as et
 
 alux_version = 0.2
 schema_location = (os.path.join(os.path.dirname(__file__), "db", "schema.ddl"))
 db_location = (os.path.join(os.path.dirname(__file__), "db", "alux.sqlite"))
-images_location = (os.path.join(os.path.dirname(__file__), "static", "images", "songs"))
+images_location = (os.path.join("static", "images", "songs"))
 
 class db():
     """Database Access Functions."""
@@ -124,34 +124,29 @@ class db():
         return non-hidden items."""
         self.openConnection()
         c = self.conn.cursor()
-        if not hidden and ident:
-            c.execute(
-                '''SELECT * FROM songs WHERE hidden=0 AND id=?;''',
-                (ident))
-        elif not hidden and playlist:
-            c.execute(
-                '''SELECT * FROM songs WHERE hidden=0 AND playlist=?;''',
-                (playlist))
-        elif not hidden:
-            c.execute(
-                '''SELECT * FROM songs WHERE hidden=0;'''
-                )
-        else:
-            c.execute(
-                '''SELECT * FROM songs;'''
-                )
+        c.execute(
+            '''SELECT * FROM songs;'''
+            )
         output = c.fetchall()
         output = [dict(x) for x in output]
+        if playlist:
+            output = [next((x for x in output if x['playlist'] == playlist), None)]
+        elif ident:
+            output = [next((x for x in output if x['id'] == int(ident)), None)]
+        elif not hidden:
+            output = [x for x in output if x['hidden'] == 0]
         self.closeConnection()
         return output
 
     def getSong(self, ident=None, playlist=None):
         """Get a single song from the database."""
-        return self.getSongs(hidden=True, ident=ident, playlist=playlist)
+        songs = self.getSongs(hidden=True, ident=ident, playlist=playlist)
+        if len(songs) > 0:
+            return songs[0]
 
     def addSong(self, playlist, title, artist, genre, image_url=None, thing_from=None, hidden=False, background=False):
         """Add a song to the database."""
-        self.openConection()
+        self.openConnection()
         self.conn.execute(
                 '''INSERT INTO songs
                 (playlist, title, artist, genre, thing_from, image_url, hidden, background)
@@ -244,7 +239,8 @@ class alux():
                 auth=(self.config['fppUser'], self.config['fppPass'])
                 )
         root = et.fromstring(r.text)
-        playlists = [child.text for child in root]
+        currentPlaylists = [x['playlist'] for x in current]
+        playlists = [child.text for child in root if child.text not in currentPlaylists]
         return playlists
 
     def checkPlayingStatus(self, background=False):
@@ -283,7 +279,7 @@ class alux():
         if not song['playing']:
             return False
         elif 'background' in song and song['background'] != 1:
-            return song
+            return False
         return True
 
     def playPlaylist(self, ident=None, playlist=None, repeat=False):
@@ -328,6 +324,9 @@ class alux():
     def modifyPlaylist(self, ident, songInfo):
         """Modifies a song in the database. songInfo is a modified dictionary
         originally from getPlaylist"""
+        song = self.db.getSong(ident=ident)
+        if song['image_url'] != songInfo['image_url']:
+            songInfo['image_url'] = self.getImage(songInfo['playlist'], songInfo['image_url'])
         self.db.modifySong(ident, songInfo)
         return
     
@@ -337,7 +336,7 @@ class alux():
         the directory it was saved at."""
         image_max = 600
         r = requests.get(image_url)
-        i = Image.open(StringIO(r.content))
+        i = Image.open(BytesIO(r.content))
         orig_width = i.size[0]
         orig_height = i.size[1]
         if orig_width > image_max or orig_height > image_max:
@@ -351,5 +350,5 @@ class alux():
                 height = image_max
             i.resize((width, height), Image.ANTIALIAS)
         filename = os.path.join(images_location, vfn(playlist, initCap=False, ascii=False).decode("UTF-8"))
-        i.save(filename)
+        i.save(filename, i.format)
         return filename

@@ -30,8 +30,7 @@ def index():
         response.set_cookie("alux_expiration", str(new_id['expiration']), expires=new_id['expiration'])
         userInfo = {'username': None, 'password': None, 'alux_id': new_id['alux_id'], 'expiration': new_id['expiration']}
     playcheck = alux.checkPlayPossible()
-    playlists = alux.getPlaylists()
-    return template('default', radioStation = config['radioStation'], userInfo=userInfo, playing=playcheck, playlists=playlists, error=False)
+    return template('default', radioStation = config['radioStation'], userInfo=userInfo, playcheck=playcheck)
 
 @get('/logout')
 def web_logout():
@@ -47,7 +46,7 @@ def web_logout():
 def play():
     this_request = request.json
     playcheck = alux.checkPlayPossible()
-    if playcheck and not isinstance(playcheck, dict):
+    if playcheck:
         if getPlaylist(ident=this_request['id']):
             alux.playPlaylist(ident=this_request['id'], repeat=this_request['repeat'])
             response.status = 205
@@ -66,7 +65,7 @@ def stop():
 @get('/status')
 def status():
     playing = alux.checkPlayingStatus()
-    reponse.status = 200
+    response.status = 200
     return playing
 
 @get('/get')
@@ -77,7 +76,15 @@ def getplaylists():
         hidden = True
     playing = alux.getPlaylists(hidden=hidden)
     response.status = 200
+    return {'playlists': sorted(playing, key=lambda k: k['title'])}
+    
+@get('/get/<ident>')
+@get('/get/<ident>/')
+def getplaylist(ident=None):
+    playing = alux.getPlaylist(ident=ident)
+    response.status = 200
     return playing
+
 
 @get('/alux_id')
 def getid():
@@ -136,7 +143,7 @@ def listnew():
         return
     playlists = alux.getNewPlaylists()
     response.status = 200
-    return {'playlists':playlists}
+    return {'playlists':sorted(playlists)}
 
 @put('/modify')
 def modify():

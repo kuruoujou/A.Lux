@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
-import os, time, sys, datetime, requests, json, sqlite3, hashlib
+import os, requests, json, sqlite3, hashlib
+from PIL import Image
+from StringIO import StringIO
+from goldfinch import validFileName as vfn
 import xml.etree.ElementTree as et
 
 alux_version = 0.2
 schema_location = (os.path.join(os.path.dirname(__file__), "db", "schema.ddl"))
 db_location = (os.path.join(os.path.dirname(__file__), "db", "alux.sqlite"))
+images_location = (os.path.join(os.path.dirname(__file__), "static", "images", "songs"))
 
 class db():
     """Database Access Functions."""
@@ -312,6 +316,7 @@ class alux():
 
     def addPlaylist(self, playlist, title, artist, genre, image_url=None, thing_from=None, hidden=False, background=False):
         """Adds a playlist to the database."""
+        image_url = self.getImage(playlist, image_url)
         self.db.addSong(playlist, title, artist, genre, image_url, thing_from, hidden, background)
         return
 
@@ -325,3 +330,26 @@ class alux():
         originally from getPlaylist"""
         self.db.modifySong(ident, songInfo)
         return
+    
+    def getImage(self, playlist, image_url)
+        """Gets an image from the given url, resizes it if necessary to fit our dimensions,
+        saves the resized image to static/images/songs/playlist_name.fileformat, and returns
+        the directory it was saved at."""
+        image_max = 600
+        r = requests.get(image_url)
+        i = Image.open(StringIO(r.content))
+        orig_width = i.size[0]
+        orig_height = i.size[1]
+        if orig_width > image_max or orig_height > image_max:
+            if orig_width > orig_height:
+                percent = (image_max / float(orig_width))
+                width = image_max
+                height = int((float(orig_height) * float(percent)))
+            else:
+                percent = (image_max / float(orig_height))
+                width = int((float(orig_width) * float(percent)))
+                height = image_max
+            i.resize((width, height), Image.ANTIALIAS)
+        filename = os.path.join(images_location, vfn(playlist, initCap=False, ascii=False).decode("UTF-8"))
+        i.save(filename)
+        return filename

@@ -331,7 +331,7 @@ class alux():
         self.db.modifySong(ident, songInfo)
         return
     
-    def getImage(self, playlist, image_url)
+    def getImage(self, playlist, image_url):
         """Gets an image from the given url, resizes it if necessary to fit our dimensions,
         saves the resized image to static/images/songs/playlist_name.fileformat, and returns
         the directory it was saved at."""

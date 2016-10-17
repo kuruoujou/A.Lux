@@ -7,8 +7,6 @@ pwd = os.getcwd()
 if pwd + '/views/' not in TEMPLATE_PATH:
     TEMPLATE_PATH.insert(0,pwd + '/views/')
 
-cookieSig="2qn3h8gew9qgew9q8fe9wq8hfeiowqpjfiopeq"
-
 with open('config.json', 'r') as f:
     config = json.load(f)
 
@@ -22,18 +20,27 @@ def serve_static(filename):
 # Main Web Responses
 @get('/')
 def index():
-    alux_id = request.get_cookie("alux_id", secret=cookieSig)
+    alux_id = request.get_cookie("alux_id")
+    alux_expiration = request.get_cookie("alux_expiration")
     userInfo = alux.checkUserAuthed(alux_id)
-    if not alux_id or not userInfo:
+    if not alux_id or not alux_expiration or not userInfo:
         new_id = getid()
         response.set_cookie(
-                "alux_id", new_id['alux_id'], 
-                expires=new_id['expiration'], secret=cookieSig
-                )
+                "alux_id", new_id['alux_id'], expires=new_id['expiration'])
+        response.set_cookie("alux_expiration", str(new_id['expiration']), expires=new_id['expiration'])
         userInfo = {'username': None, 'password': None, 'alux_id': new_id['alux_id'], 'expiration': new_id['expiration']}
     playcheck = alux.checkPlayPossible()
     playlists = alux.getPlaylists()
     return template('default', radioStation = config['radioStation'], userInfo=userInfo, playing=playcheck, playlists=playlists, error=False)
+
+@get('/logout')
+def web_logout():
+    alux_id = request.get_cookie("alux_id")
+    userInfo = alux.checkUserAuthed(alux_id)
+    if not alux_id or not userInfo:
+        redirect("/")
+    alux.deauthorize(alux_id)
+    redirect("/")
     
 # API Endpoints
 @put('/play')
@@ -86,6 +93,17 @@ def authenticate():
         return
     response.status = 401
     return
+ 
+@post('/logout')
+def logout():
+    alux_id = request.query.alux_id
+    if not alux.checkUserAuthed(alux_id):
+        response.status = 401
+        return
+    this_request = request.json
+    alux.deauthorize(this_request['alux_id'])
+    response.status = 205
+    return
 
 @put('/add')
 def add():
@@ -96,7 +114,7 @@ def add():
     this_request = request.json
     alux.addPlaylist(this_request['playlist'], this_request['title'], this_request['artist'], this_request['genre'], this_request['image_url'], this_request['thing_from'], this_request['hidden'], this_request['background'])
     playlist = alux.getPlaylist(playlist=this_request['playlist'])
-    response.status = 401
+    response.status = 204
     return {'id': playlist['id']} 
 
 @delete('/remove')

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, time, sys, datetime, requests, json, sqlite3
+import os, time, sys, datetime, requests, json, sqlite3, hashlib
 import xml.etree.ElementTree as et
 
 alux_version = 0.2
@@ -108,7 +108,7 @@ class db():
             userInfo['expiration'] = None
         self.conn.execute(
                 '''UPDATE users SET username=?, password=?,
-                alux_id=?, expiration=? WHERE uid=uid''',
+                alux_id=?, expiration=? WHERE id=id''',
                 ( userInfo['username'], userInfo['password'],
                   userInfo['alux_id'], userInfo['expiration']))
         self.closeConnection()
@@ -194,8 +194,9 @@ class alux():
         userInfo = self.db.getUser(username=username)
         if userInfo:
             if userInfo['password'] == hashlib.sha512(
-                    str.encode("{0}{1}".format(password, config['salt']))
+                    str.encode("{0}{1}".format(password, self.config['salt']))
                     ).hexdigest():
+                
                 return userInfo['id']
         return False
 
@@ -212,6 +213,15 @@ class alux():
         """Checks if a user is authenticated based on the cookie id they have
         set."""
         return self.db.getUser(alux_id=alux_id)
+        
+    def deauthorize(self, alux_id):
+        """Deauthorizes a user by removing all alux_ids and expirations set to
+        their account"""
+        userInfo = self.db.getUser(alux_id=alux_id)
+        userInfo['alux_id'] = None
+        userInfo['expiration'] = None
+        self.db.modifyUser(userInfo['id'], userInfo)
+        return
 
     def getPlaylists(self, hidden=False):
         """Get all playlist in the database, if hidden is false, do not return
@@ -249,6 +259,10 @@ class alux():
         else:
             return {"playing": False}
         song = self.db.getSong(playlist=playlist)
+        # Handle the case that the song isn't yet in the database. In this case,
+        # we cannot play but we can't discern anything about the song.
+        if not song:
+            return {"playing": True}
         if not background and song['background'] == 1:
             return {"playing": False}
         song['playing'] = True
@@ -264,7 +278,7 @@ class alux():
         song = self.checkPlayingStatus(background=True)
         if not song['playing']:
             return False
-        elif song['background'] != 1:
+        elif 'background' in song and song['background'] != 1:
             return song
         return True
 

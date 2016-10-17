@@ -1,6 +1,6 @@
 $(document).ready(function(){
 	// Display the main page as soon as we load.
-	if(playcheck == "True"){
+	if(playcheck == "True" or authenticated == true){
 		display_main_page();
 	} else if(playcheck == "False"){
 		$.ajax({

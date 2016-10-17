@@ -27,6 +27,13 @@
 	<script type="text/javascript">
 		var radioStation = "{{radioStation}}";
 		var playcheck = "{{playcheck}}";
+        % # If this is "true" when the user isn't authenticated it's not a big deal, because they'll see they list but
+        % # the server still won't let them play anything.
+        % if userInfo['username']:
+        var authenticated=true;
+        % else:
+        var authenticated=false;
+        % end
 	</script>
   </head>
 

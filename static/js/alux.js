@@ -1,6 +1,6 @@
 $(document).ready(function(){
 	// Display the main page as soon as we load.
-	if(playcheck == "True" || authenticated == true){
+	if(playcheck == "True"){
 		display_main_page();
 	} else if(playcheck == "False"){
 		$.ajax({
@@ -9,9 +9,11 @@ $(document).ready(function(){
 			dataType: 'json',
 			url: "/status",
 			success: function(data){
-					if(data['playing'] == false){
+					if(data['playing'] == false && authenticated == false){
 						display_out_of_bounds_page();
-					} else {
+					} else if (authenticated == true){
+                        display_main_page();
+                    } else {
 						display_media_page();
 					}
 			}

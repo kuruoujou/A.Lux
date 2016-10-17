@@ -126,6 +126,49 @@ $(document).ready(function(){
 		});
 		
 	});
+
+    //Play a song when pressed, and if possible.
+    $("#choices".on('click', '.playsong', function(){
+        $("#choices").empty();
+        $("#description").empty();
+        var toPlay = {
+            "id": this.id.split("-")[1],
+        };
+        if($(this).hasClass("repeat")){
+            toPlay.repeat = true;
+        } else {
+            toPlay.repeat = false;
+        }
+        $.ajax({
+            type: 'put',
+            contentType: 'application/json',
+            dataType: 'json',
+            url: '/play?alux_id='.concat($.cookie("alux_id")),
+            beforeSend: function(){                                              
+                $("#choices").html("<img src='static/images/load.gif'>");    
+            },                                                                   
+            statusCode: {                                                        
+                205: function(){
+                    if (toPlay.repeat) {
+                        display_main_page();
+                    } else {
+                        display_media_page();
+                    }
+                },                                                               
+                404: function(){
+                    $("#choices").empty();
+                    $("#description").html("That playlist doesn't exist! If you got here through a link, email <a href=\"mailto:helloThere+kld@spencerjulian.com\">helloThere+kld@spencerjulian.com</a> to let me know.");
+                },
+                409: function(){
+                    if(playcheck == "True"){
+                        display_media_page();
+                    } else {
+                        display_out_of_bounds_page();
+                    }
+                }
+            }
+        });
+    });
 	
 	//Add the song from the form
 	$("#choices").on('click', '#addsong', function(){
@@ -214,7 +257,12 @@ function display_main_page(){
 		url: "/get?alux_id=".concat($.cookie("alux_id")),
 		success: function(data){
 			$.each(data.playlists, function(index, element){
-				var output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"playsong\">".concat(element.title, "</a></div>");
+                var output;
+                if(element.background == 1){
+    				output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"playsong repeat\" id=\"playlist-".concat(element.id, "\">", element.title,"</a></div>");
+                } else {
+    				output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"playsong\" id=\"playlist-".concat(element.id, "\">", element.title,"</a></div>");
+                }
 				$("#choices").append(output)
 			});
 		}
@@ -227,5 +275,6 @@ function display_out_of_bounds_page(){
 }
 
 function display_media_page(){
+    $("#description").html("<h1>Playing a song somewhere.");
 	console.log("Not yet implemented.");
 }

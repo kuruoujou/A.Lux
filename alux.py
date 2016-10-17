@@ -316,7 +316,7 @@ class alux():
 
     def addPlaylist(self, playlist, title, artist, genre, image_url=None, thing_from=None, hidden=False, background=False):
         """Adds a playlist to the database."""
-        image_url = self.getImage(playlist, image_url)
+        image_url = self.getImage(playlist, image_url) if image_url != '' else ''
         self.db.addSong(playlist, title, artist, genre, image_url, thing_from, hidden, background)
         return
 

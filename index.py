@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from bottle import route, get, run, default_app, template, static_file, post,  put, delete, request, response, redirect, TEMPLATE_PATH
 import alux, os, time, sys, datetime, requests, json, uuid, hashlib
+from threading import Timer
 
 pwd = os.getcwd()
 #Add the template path if it's not there
@@ -11,6 +12,20 @@ with open('config.json', 'r') as f:
     config = json.load(f)
 
 alux = alux.alux()
+
+#Helper function to restart background in thread
+def restart_background():
+    playing = alux.checkPlayingStatus()
+    if playing['playing']:
+        if 'background' in playing and playing['background'] != 1:
+            t = Timer(playing['time_since_start'] + playing['time_remaining'] + 1, restart_background)
+            t.start()
+            print("restarting thread")
+        print("Return without playing background.")
+        return
+    print("play background.")
+    alux.playPlaylist(playlist=config['background'], repeat=True)
+    return
 
 #Root and static stuff
 @get('/static/<filename:path>')
@@ -50,6 +65,9 @@ def play():
         if alux.getPlaylist(ident=this_request['id']):
             alux.stopPlaylist()
             alux.playPlaylist(ident=this_request['id'], repeat=this_request['repeat'])
+            playing = alux.checkPlayingStatus()
+            t = Timer(playing['time_since_start'] + playing['time_remaining'] + 1, restart_background)
+            t.start()
             response.status = 205
             return
         response.status = 404
@@ -61,6 +79,9 @@ def play():
             if alux.getPlaylist(ident=this_request['id']):
                 alux.stopPlaylist()
                 alux.playPlaylist(ident=this_request['id'], repeat=this_request['repeat'])
+                playing = alux.checkPlayingStatus()
+                t = Timer(playing['time_since_start'] + playing['time_remaining'] + 1, restart_background)
+                t.start()
                 response.status = 205
                 return
             response.status = 404

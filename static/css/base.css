@@ -88,7 +88,11 @@ body {
     flex-wrap: wrap;
     align-items: center;
     width: 100%;
-    height: 650px;
+}
+.choices .art img{
+	max-width: 100%;
+	height: auto;
+	width: auto\9;
 }
 .choices .pbar{
     margin-top: 20px;
@@ -103,7 +107,7 @@ body {
     padding: 0px 10px 0px 10px;
 }
 .choices .pbar .progress{
-    width: 85%;
+    width: 60%;
     display: inline-block;
     margin: 0;
 }

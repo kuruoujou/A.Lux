@@ -321,7 +321,7 @@ function display_media_page(){
             var title = "<h1 class=\"title\">".concat(element.title, "</h1>");
             var artist = element.artist == "" ? "" : "<h2 class=\"artist\">".concat(element.artist, "</h2>");
             var thing_from = element.thing_from == "" ? "" : "<h3 class=\"thing_from\">From ".concat(element.thing_from, "</h3>");
-            var art = element.image_url == "" ? "" : "<div class=\"art\"><img src=\"".concat(element.image_url, " class=\"album-art\"></div>");
+            var art = element.image_url == "" ? "" : "<div class=\"art\"><img src=\"".concat(element.image_url, "\" class=\"album-art\"></div>");
             since_start = element.time_since_start;
             total_time = element.time_since_start + element.time_remaining;
             percent_remaining = Math.floor((element.time_since_start / element.time_remaining) * 100 );
@@ -353,6 +353,7 @@ function display_media_page(){
                        since_start = element.time_since_start;
                        total_time = element.time_since_start + element.time_remaining;
                    } else {
+					   $("#choices").empty();
                        display_main_page();
                    }
                 }
@@ -360,7 +361,7 @@ function display_media_page(){
         }
         percent_remaining = Math.floor((since_start / total_time) * 100 );
         $(".progress-bar").width(percent_remaining + "%");
-        $("time_since_start").html(sformat(since_start));
+        $(".time_since_start").html(sformat(since_start));
     }, 1000);
 }
 

@@ -4,7 +4,6 @@ config.json
 alux.sqlite*
 static/images/songs/*
 docker-compose.yml
-Dockerfile*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

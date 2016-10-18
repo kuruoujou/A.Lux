@@ -22,10 +22,23 @@ body {
     color: #888;
 }
 .choices .song, .stop .song {
-    height: 4em;
-    border-bottom: 1px #555 solid;
-    font-size: 1.2em;
-    line-height: 4em;
+	display: block;
+	height: 6em;
+	border-bottom: 1px #555 solid;
+}
+.choices .song .title, .stop .song .title {
+	color: #3399ff;
+	font-size: 1.4em;
+	flex: 0 100%;
+}
+.choices .song .artist, .stop .song .artist {
+	color: #999;
+	flex: 0 100%;
+}
+.choices .song .thing_from, .stop .song .thing_from {
+	color: #999;
+	font-style: italic;
+	flex: 0 100%;
 }
 .choices .add, .stop .add{
 	background-color:  #001500;
@@ -34,10 +47,14 @@ body {
     border-top: 1px #555 solid;
 }
 .choices .song a, .stop .song a{
-    display: block;
-    width: 100%;
-    height: 100%;
-    color: #3399ff;
+    display: flex;
+	flex-wrap: wrap;
+	width: 100%;
+	height: 100%;
+	align-items: center;
+}
+.choices .song a:hover, .stop .song a:hover{
+	text-decoration: none;
 }
 #login_error{
 	color: #ff0000;

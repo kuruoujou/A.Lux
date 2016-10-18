@@ -172,6 +172,26 @@ $(document).ready(function(){
         });
     });
 	
+	$("#choices").on('click', '#stopsong', function(){
+        $("#choices").empty();
+        $("#description").empty();
+        $.ajax({
+            type: 'delete',
+            contentType: 'application/json',
+            dataType: 'json',
+            url: '/stop?alux_id='.concat($.cookie("alux_id")),
+            beforeSend: function(){                                              
+                $("#choices").html("<img src='static/images/load.gif'>");    
+            },                                                                   
+            statusCode: {                                                        
+                205: function(){
+					$("#choices").empty();
+                    display_main_page();
+                }
+            }
+        });
+    });
+	
 	//Add the song from the form
 	$("#choices").on('click', '#addsong', function(){
 		make_add_modify_request('add')
@@ -196,7 +216,7 @@ function display_add_modify_song_list(){
 			success: function(data){
 				$("#choices").empty();
 				$.each(data.playlists, function(index, element){
-					var output = "<div class=\"song col-md-12 add\"><a href=\"#\" class=\"addsong\">".concat(element,"</a></div>");
+					var output = "<div class=\"song col-md-12 add\"><a href=\"#\" class=\"addsong\"><span class=\"title\">".concat(element,"</span></a></div>");
 					$("#choices").append(output)
 				});
 			}
@@ -208,7 +228,7 @@ function display_add_modify_song_list(){
 			url: "/get?alux_id=".concat($.cookie("alux_id")),
 			success: function(data){
 				$.each(data.playlists, function(index, element){
-					var output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"modifysong\" id=\"playlist-".concat(element.id, "\">", element.playlist,"</a></div>");
+					var output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"modifysong\" id=\"playlist-".concat(element.id, "\"><span class=\"title\">", element.playlist,"</span></a></div>");
 					$("#choices").append(output)
 				});
 			}
@@ -260,11 +280,22 @@ function display_main_page(){
 		success: function(data){
 			$.each(data.playlists, function(index, element){
                 var output;
-                if(element.background == 1){
-    				output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"playsong repeat\" id=\"playlist-".concat(element.id, "\">", element.title,"</a></div>");
-                } else {
-    				output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"playsong\" id=\"playlist-".concat(element.id, "\">", element.title,"</a></div>");
-                }
+				var title = "<span class=\"title\">".concat(element.title, "</span>");
+				var repeat = element.background == 1 ? "repeat" : "";
+				var artist = element.artist == "" ? "" : "<br><span class=\"artist\">".concat(element.artist, "</span>");
+				var thing_from = element.thing_from == "" ? "" : "<br><span class=\"thing_from\">From ".concat(element.thing_from, "</span>");
+				var padding = element.thing_from == "" ? "<br><span class=\"thing_from\">&nbsp;</span>" : ""
+				output = "<div class=\"song col-md-12\"><a href=\"#\" class=\"playsong ".concat(
+					repeat,
+					"\" id=\"playlist-",
+					element.id,
+					"\">",
+					title,
+					artist,
+					thing_from,
+					padding,
+					"</a></div>"
+				);
 				$("#choices").append(output)
 			});
 		}
@@ -278,5 +309,6 @@ function display_out_of_bounds_page(){
 
 function display_media_page(){
     $("#description").html("<h1>Playing a song somewhere.</h1>");
+	$("#choices").html("<a id=\"stopsong\">Stop this song.</a>");
 	console.log("Not yet implemented.");
 }

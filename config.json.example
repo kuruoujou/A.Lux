@@ -4,4 +4,5 @@
 	"fppUser": "admin",
     "fppPass": "",
     "salt": "insert_random_string_here"
+	"background": "background_playlist_name"
 }

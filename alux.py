@@ -288,14 +288,14 @@ class alux():
         if ident:
             playlist = self.db.getSong(ident=ident)['playlist']
         if repeat:
-            requests.get(
-                    "{0}/fppxml.php?command=startPlaylist&playlist={1}&repeat=checked".format(
+            r = requests.get(
+                    "{0}/fppxml.php?command=startPlaylist&playList={1}&repeat=checked&playEntry=0".format(
                         self.config['fppUrl'], playlist),
                     auth=(self.config['fppUser'], self.config['fppPass'])
                     )
         else:
-            requests.get(
-                    "{0}/fppxml.php?command=startPlaylist&playlist={1}".format(
+            r= requests.get(
+                    "{0}/fppxml.php?command=startPlaylist&playList={1}&playEntry=0".format(
                         self.config['fppUrl'], playlist),
                     auth=(self.config['fppUser'], self.config['fppPass'])
                     )
@@ -305,8 +305,8 @@ class alux():
         """Stops all playlists from playing."""
         requests.get(
                 "{0}/fppxml.php?command=stopNow".format(
-                    config['fppUrl']),
-                auth=(config['fppUser'], config['fppPass'])
+                    self.config['fppUrl']),
+                auth=(self.config['fppUser'], self.config['fppPass'])
                 )
         return
 

@@ -1,6 +1,6 @@
 $(document).ready(function(){
 	// Display the main page as soon as we load.
-	if(playcheck == "True"){
+    if(playcheck == "True"){
 		display_main_page();
 	} else if(playcheck == "False"){
 		$.ajax({
@@ -308,7 +308,6 @@ function display_out_of_bounds_page(){
 }
 
 function display_media_page(){
-    $("#description").html("<h1>Playing a song somewhere.</h1>");
-	$("#choices").html("<a id=\"stopsong\">Stop this song.</a>");
-	console.log("Not yet implemented.");
+    $("#description").html("<h1 class=\"title\">Red Like Roses Parts I & II</h1><h2 class=\"artist\">Jeff Williams feat. Casey Lee Williams</h2><h3 class=\"thing_from\">From RWBY</h3>");
+	$("#choices").html("<div class=\"art\"><img src=\"static/images/songs/Red_Like_Roses\" class=\"album-art\"></div><div class=\"pbar\"><span class=\"remaining\">00:00</span><div class=\"progress\"><div class=\"progress-bar\" role=\"progressbar\" style=\"width: 50%\"></div></div><span class=\"total\">00:00</span></div><div class=\"stopsong\" id=\"stopsong\">Stop this song</div>");
 }

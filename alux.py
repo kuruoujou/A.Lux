@@ -340,15 +340,8 @@ class alux():
         orig_width = i.size[0]
         orig_height = i.size[1]
         if orig_width > image_max or orig_height > image_max:
-            if orig_width > orig_height:
-                percent = (image_max / float(orig_width))
-                width = image_max
-                height = int((float(orig_height) * float(percent)))
-            else:
-                percent = (image_max / float(orig_height))
-                width = int((float(orig_width) * float(percent)))
-                height = image_max
-            i.resize((width, height), Image.ANTIALIAS)
+            print("resize")
+            i.thumbnail((image_max, image_max), Image.ANTIALIAS)
         filename = os.path.join(images_location, vfn(playlist, initCap=False, ascii=False).decode("UTF-8"))
         i.save(filename, i.format)
         return filename

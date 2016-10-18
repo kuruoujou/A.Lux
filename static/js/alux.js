@@ -308,6 +308,68 @@ function display_out_of_bounds_page(){
 }
 
 function display_media_page(){
-    $("#description").html("<h1 class=\"title\">Red Like Roses Parts I & II</h1><h2 class=\"artist\">Jeff Williams feat. Casey Lee Williams</h2><h3 class=\"thing_from\">From RWBY</h3>");
-	$("#choices").html("<div class=\"art\"><img src=\"static/images/songs/Red_Like_Roses\" class=\"album-art\"></div><div class=\"pbar\"><span class=\"remaining\">00:00</span><div class=\"progress\"><div class=\"progress-bar\" role=\"progressbar\" style=\"width: 50%\"></div></div><span class=\"total\">00:00</span></div><div class=\"stopsong\" id=\"stopsong\">Stop this song</div>");
+    var since_start, total_time, percent_remaining;
+    $.ajax({
+        type: 'get',
+        contentType: 'application/json',
+        dataType: 'json',
+        url: "/status?alux_id=".concat($.cookie("alux_id")),
+        beforeSend: function(){
+            $("#choices").html("<img src='static/images/load.gif'>");
+        },
+        success: function(element){
+            var title = "<h1 class=\"title\">".concat(element.title, "</h1>");
+            var artist = element.artist == "" ? "" : "<h2 class=\"artist\">".concat(element.artist, "</h2>");
+            var thing_from = element.thing_from == "" ? "" : "<h3 class=\"thing_from\">From ".concat(element.thing_from, "</h3>");
+            var art = element.image_url == "" ? "" : "<div class=\"art\"><img src=\"".concat(element.image_url, " class=\"album-art\"></div>");
+            since_start = element.time_since_start;
+            total_time = element.time_since_start + element.time_remaining;
+            percent_remaining = Math.floor((element.time_since_start / element.time_remaining) * 100 );
+            $("#description").html(title.concat(
+                        artist,
+                        thing_from
+                        ));
+            $("#choices").html(art.concat(
+                        "<div class=\"pbar\"><span class=\"time_since_start\">",
+                        sformat(since_start),
+                        "</span><div class=\"progress\"><div class=\"progress-bar\" role=\"progressbar\" style=\"width: ",
+                        percent_remaining,
+                        "%\"></div></div><span class=\"total\">",
+                        sformat(total_time),
+                        "</span></div><div class=\"stopsong\" id=\"stopsong\">Stop this song</div>"
+                        ));
+        }
+    });
+    var interval = setInterval( function() {
+        since_start = since_start+1;
+        if (since_start == total_time || since_start % 5 == 0){
+            $.ajax({
+                type: 'get',
+                contentType: 'application/json',
+                dataType: 'json',
+                url: "/status?alux_id=".concat($.cookie("alux_id")),
+                success: function(element){
+                   if(element.playing == true ){
+                       since_start = element.time_since_start;
+                       total_time = element.time_since_start + element.time_remaining;
+                   } else {
+                       display_main_page();
+                   }
+                }
+            });
+        }
+        percent_remaining = Math.floor((since_start / total_time) * 100 );
+        $(".progress-bar").width(percent_remaining + "%");
+        $("time_since_start").html(sformat(since_start));
+    }, 1000);
+}
+
+// Found at https://forum.jquery.com/topic/converting-seconds-to-dd-hh-mm-ss-format
+// by kbwood.au
+function sformat(s) {
+    var fm = [
+        Math.floor(s / 60) % 60, // MINUTES
+        s % 60 // SECONDS
+    ];
+return $.map(fm, function(v, i) { return ((v < 10) ? '0' : '') + v; }).join(':');
 }

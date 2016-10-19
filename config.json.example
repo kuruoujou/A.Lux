@@ -1,9 +1,8 @@
 {
 	"radioStation": "88.1 FM",
-        "fppUrl": "http://fpp",
+    "fppUrl": "http://fpp",
 	"fppUser": "admin",
-        "fppPass": "",
-        "startHour": 17,
-        "endHour": 0,
-	"timezone": "America/Indiana/Indianapolis"
+    "fppPass": "",
+    "salt": "insert_random_string_here",
+	"background": "background_playlist_name"
 }

@@ -1,6 +1,9 @@
 # ---> Python
 # A.Lux specific files
 config.json
+alux.sqlite*
+static/images/songs/*
+docker-compose.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

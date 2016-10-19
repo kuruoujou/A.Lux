@@ -9,13 +9,13 @@
     <meta name="author" content="">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>Lights Template</title>
+    <title>A.Lux</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="./css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/css/bootstrap.min.css" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="./css/base.css" rel="stylesheet">
+    <link href="static/css/base.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -29,36 +29,54 @@
     <nav class="navbar navbar-inverse navbar-fixed-top">
       <div class="container">
         <div class="navbar-header">
-          <a class="navbar-brand" href="#">Kuroshi's Light Display</a>
+          <a class="navbar-brand" href="#">A.Lux</a>
         </div>
         </div><!--/.nav-collapse -->
       </div>
     </nav>
     <div class="container-fluid">
       <section class="description" id="description">
-          <h1>Tune your radio to 88.1, select a song below, and enjoy!</h1>
+          %if error:
+          <h1>{{error}}</h1>
+          %end
+          %if not playing and playable:
+          <h1>Tune your radio to {{radioStation}}, select a song below, and enjoy!</h1>
+          %elif not playable:
+          <h1>The show is only playable between roughly sundown and midnight, sorry about that! Thanks for stopping by!</h1>
+          %else:
+          <h1>Currently playing {{playlistName}}, about {{timeRemaining}} seconds left.</h1>
+          %end
       </section>
+      %if not playing and playable:
       <section class="choices" id="choices">
+        %iteration=0
+        %for playlist in playlists:
       	<div class="row">
+                %if iteration==0:
 		<div class="song top col-md-12">
-			<a href="#">Wizards in Winter</a>
+                %iteration=1
+                %else:
+                <div class="song col-md-12">
+                %end
+			<a href="/play?song={{playlist['title']}}">{{playlist['displayTitle']}}</a>
 		</div>
 	</div>
-	<div class="row">
-		<div class="song col-md-12">
-			<a href="#">ME!ME!ME!</a>
-		</div>
-	</div>
+        %end
       </section>
+      %elif playable:
       <section class="stop" id="stop">
         <div class="row">
               <div class="song top col-md-12">
-                  <a href="#">Tap to stop the currently playing song.</a>
+                  <a href="/stop">Tap to stop the currently playing song.</a>
               </div>
         </div> 
-      <section class="description" id="problems">
-	  <small>Buttons don't work? Light display look broken? Let me know: <a href="mailto:helloThere+kld@spencerjulian.com">helloThere+kld@spencerjulian.com</a></small>
       </section>
+      %end
+      %if playable:
+      <section class="description" id="problems">
+	  <small>Buttons don't work? Light display look broken or frozen? Let me know: <a href="mailto:helloThere+kld@spencerjulian.com">helloThere+kld@spencerjulian.com</a></small>
+      </section>
+      %end
     </div><!-- /.container -->
 
 
@@ -66,7 +84,7 @@
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="./js/bootstrap.min.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
   </body>
 </html>
 

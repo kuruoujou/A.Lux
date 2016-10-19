@@ -1,4 +1,4 @@
-#A.Lux
+# A.Lux
 The public web front-end for the [Falcon Pi Player](https://github.com/FalconChristmas/fpp)
 
 A.Lux allows you to to have a smartphone-friendly easy-to-use interface for your

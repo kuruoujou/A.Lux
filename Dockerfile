@@ -22,7 +22,7 @@ RUN echo "daemon off;" >> /etc/nginx/nginx.conf && \
     cp /alux/nginx.conf /etc/nginx/sites-enabled/default && \
     pip3 install -r /alux/requirements.txt
 
-VOLUME [ "/alux/config.json" ]
+VOLUME [ "/alux/config.json", "/db" ]
 
 EXPOSE 80
 

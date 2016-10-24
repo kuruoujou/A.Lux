@@ -6,7 +6,7 @@ from goldfinch import validFileName as vfn
 import xml.etree.ElementTree as et
 
 alux_version = 0.2
-schema_location = (os.path.join(os.path.dirname(__file__), "db", "schema.ddl"))
+schema_location = (os.path.join(os.path.dirname(__file__), "schema.ddl"))
 db_location = (os.path.join(os.path.dirname(__file__), "db", "alux.sqlite"))
 images_location = (os.path.join("static", "images", "songs"))
 
@@ -15,14 +15,16 @@ class db():
 
     def __init__(self):
         """Create DB if it doesn't exist, if it does, load it."""
-        self.openConnection()
-        c = self.conn.cursor()
         try:
+            self.openConnection()
+            c = self.conn.cursor()
             c.execute("SELECT * FROM alux_info WHERE key='version';")
             self.conn.row_factory = sqlite3.Row
         except sqlite3.OperationalError:
-            self.conn.row_factory = sqlite3.Row
             self.createDB()
+            self.openConnection()
+            c = self.conn.cursor()
+            self.conn.row_factory = sqlite3.Row
 
     def __del__(self):
         """Close DB class - just make sure the connection is closed."""

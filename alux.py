@@ -6,7 +6,7 @@ from goldfinch import validFileName as vfn
 import xml.etree.ElementTree as et
 
 alux_version = 0.2
-schema_location = (os.path.join(os.path.dirname(__file__), "db", "schema.ddl"))
+schema_location = (os.path.join(os.path.dirname(__file__), "schema.ddl"))
 db_location = (os.path.join(os.path.dirname(__file__), "db", "alux.sqlite"))
 images_location = (os.path.join("static", "images", "songs"))
 

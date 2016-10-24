@@ -22,7 +22,7 @@ on most systems.
 A.Lux is available as a docker container to make deployment simpler. Using it is
 simple:
 
-    docker run -d -v /path/to/config.json:/alux/config.json -p 80:80 --name alux kuroshi/alux 
+    docker run -d -v /path/to/config.json:/alux/config.json -v /path/to/db:/alux/db -p 80:80 --name alux kuroshi/alux 
 
 I recommend running a reverse proxy in front of it (such as 
 [jwilder/nginx-proxy](https://github.com/jwilder/nginx-proxy) for example) for 

@@ -354,6 +354,7 @@ function display_media_page(){
                        total_time = element.time_since_start + element.time_remaining;
                    } else {
 					   $("#choices").empty();
+                       clearInterval(interval);
                        display_main_page();
                    }
                 }

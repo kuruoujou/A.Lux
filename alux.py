@@ -9,6 +9,7 @@ alux_version = 0.2
 schema_location = (os.path.join(os.path.dirname(__file__), "schema.ddl"))
 db_location = (os.path.join(os.path.dirname(__file__), "db", "alux.sqlite"))
 images_location = (os.path.join("static", "images", "songs"))
+default_userpass = ('admin', 'a7uxp4ss')
 
 class db():
     """Database Access Functions."""
@@ -58,6 +59,7 @@ class db():
         self.conn.executescript(schema)
         # Make sure to add 
         self.updateInfo('version', alux_version)
+        self.createUser(*default_userpass)
         self.closeConnection()
         return
 
@@ -81,6 +83,20 @@ class db():
                     (value, key))
         self.closeConnection()
         return
+
+    def createUser(self, username, password):
+        """Creates a new user with the given username and password.
+        
+        Password is assumed to be already hashed."""
+        self.openConnection()
+        c = self.conn.cursor()
+        self.conn.execute(
+                '''INSERT INTO users (username, password)
+                VALUES (?,?);''',
+                (username, password))
+        self.closeConnection()
+        return
+
 
     def getUser(self, uid=None, username=None, alux_id=None):
         """Gets user information based on some value."""
@@ -209,6 +225,22 @@ class alux():
         userInfo['expiration'] = expiration
         self.db.modifyUser(uid, userInfo)
         return
+
+    def updateUserInfo(self, userInfo):
+        """Updates a user's info based on the returned userInfo.
+        If the password field is non-empty, it will reset the password to be
+        a sha512'd, salted, hash."""
+        oldUserInfo = self.db.getUser(alux_id = userInfo['alux_id'])
+        if not oldUserInfo:
+            return False
+        if userInfo['password'] == userInfo['password_confirm']:
+            userInfo['password'] = hashlib.sha512(
+                    str.encode("{0}{1}".format(userInfo['password'], self.config['salt']))
+                    ).hexdigest();
+        else:
+            userInfo['password'] = oldUserInfo['password']
+        self.db.modifyUser(userInfo['uid'], userInfo)
+        return True
 
     def checkUserAuthed(self, alux_id):
         """Checks if a user is authenticated based on the cookie id they have

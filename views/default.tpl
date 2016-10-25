@@ -66,8 +66,8 @@
                   %else:
                      <ul class="nav lvl2">
                         <li><a href="#" id="add_songs_btn">Add/Modify Songs</a></li>
-                        <li><a href="#">Config Options</a></li>
-						<li><a href="#">Edit {{userInfo['username']}}'s Account</a></li>
+                        <li><a href="#" id="modify_config_btn">Config Options</a></li>
+						<li><a href="#" id="modify_account_btn">Edit {{userInfo['username']}}'s Account</a></li>
                         <li><a href="/logout">Log Out</a></li>
                      </ul>
                   %end

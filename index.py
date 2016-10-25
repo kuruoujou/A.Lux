@@ -134,6 +134,15 @@ def authenticate():
         return
     response.status = 401
     return
+
+@post('/modifyuser')
+def modifyuser():
+    this_request = request.json
+    if not alux.updateUserInfo(this_request):
+        response.status = 401
+        return
+    response.status = 204
+    return
  
 @post('/logout')
 def logout():

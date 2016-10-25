@@ -229,7 +229,7 @@ class alux():
     def updateUserInfo(self, userInfo):
         """Updates a user's info based on the returned userInfo.
         If the password field is non-empty, it will reset the password to be
-        a sha512'd, salted, hash."""
+        a sha512'd, salted, hash. Cookie expiration cannot be modified here."""
         oldUserInfo = self.db.getUser(alux_id = userInfo['alux_id'])
         if not oldUserInfo:
             return False
@@ -239,6 +239,7 @@ class alux():
                     ).hexdigest();
         else:
             userInfo['password'] = oldUserInfo['password']
+        userInfo['expiration'] = oldUserInfo['expiration']
         self.db.modifyUser(userInfo['uid'], userInfo)
         return True
 

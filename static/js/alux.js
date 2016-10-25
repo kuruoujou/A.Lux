@@ -51,6 +51,69 @@ $(document).ready(function(){
 		});
 		return false;
 	});
+    
+    //Display the Modify User Account dialog
+	$("#modify_account_btn").click(function(){
+		$("#navbar").collapse('hide');
+        display_modify_account_page("");
+	});
+
+    //Attempt to modify user.
+    $("#choices").on('click', '#modifyuser', function(){
+        var userInfo = {
+			'username': $("#username").val(),
+			'password': $("#password").val(),
+			'confirm_password': $("#confirm").val(),
+		}
+        $("#choices").empty();
+        $("#description").empty();
+        $.ajax({
+            type: 'post',
+            contentType: 'application/json',
+            dataType: 'json',
+            url: '/modifyuser?alux_id='.concat($.cookie("alux_id")),
+			data: JSON.stringify(toPlay),
+            beforeSend: function(){                                              
+                $("#choices").html("<img src='static/images/load.gif'>");    
+            },                                                                   
+            statusCode: {                                                        
+                204: function(){
+                        display_main_page();
+                },                                                               
+                401: function(){
+                        display_modify_account_page("Your user does not exist.");
+                },
+                409: function(){
+                        display_modify_account_page("A user with that name already exists.");
+                }
+            }
+        });
+
+    });
+
+    //Display the Add/Modify song form
+	$("#choices").on('click', '.addsong', function(){
+		$("#choices").empty();
+		$("#description").empty();
+		$("#description").html("<h1>Adding ".concat($(this).text(), " to the A.Lux database"));
+		$("#choices").html("<form accept-charset=\"UTF-8\" class=\"form-add\" id=\"form-add\">\
+						<label for=\"playlist_name\">Playlist Name</label>\
+						<input type=\"text\" id=\"playlist_name\" name=\"playlist_name\" class=\"form-control\" value=\"" + $(this).text() + "\" required autofocus readonly>\
+						<label for=\"title\">Playlist Title</label>\
+						<input type=\"text\" id=\"title\" name=\"title\" class=\"form-control\" placeholder=\"Title\" autofocus>\
+						<label for=\"artist\">Artist</label>\
+						<input type=\"text\" id=\"artist\" name=\"artist\" class=\"form-control\" placeholder=\"Artist\" autofocus>\
+						<label for=\"genre\">Genre</label>\
+						<input type=\"text\" id=\"genre\" name=\"genre\" class=\"form-control\" placeholder=\"Genre\" autofocus>\
+						<label for=\"image_url\">Image URL</label>\
+						<input type=\"text\" id=\"image_url\" name=\"image_url\" class=\"form-control\" placeholder=\"Image URL\" autofocus>\
+						<label for=\"thing_from\">Media From (TV Show, Movie, etc.)</label>\
+						<input type=\"text\" id=\"thing_from\" name=\"thing_from\" class=\"form-control\" placeholder=\"Media From\" autofocus>\
+						<div class=\"checkbox\"><label><input type=\"checkbox\" id=\"background\" value=\"background\"> Background Sequence</label></div>\
+						<div class=\"checkbox\"><label><input type=\"checkbox\" id=\"hidden\" value=\"hidden\"> Hidden Sequence</label></div>\
+						<button id=\"addsong\" class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">Add Song</button>\
+					</form>");
+	});
 	
 	//Display the Add Songs dialog
 	$("#add_songs_btn").click(function(){
@@ -269,6 +332,23 @@ function make_add_modify_request(call_url){
 			}
 		});
 }
+
+function display_modify_account_page(error){
+        $("#choices").empty();
+        $("description").empty();
+        $("#description").html("<h1>Modifying ".concat(username, "'s account</h1>"))
+        $("#choices".html("<div id=\"login_error\">" + error + "</div>
+                        <form accept-charset=\"UTF-8\" class=\"form-add\" id=\"form-add\">\
+                        <label for=\"username\">Username</label>\
+                        <input type=\"text\" id=\"username\" name=\"username\" class=\"form-control\" value=\"" + username + \"\" required autofocus>\
+                        <label for=\"password\">Password</label>\
+                        <input type=\"password\" id=\"password\" name=\"password\" class=\"form-control\" autofocus>\
+                        <label for=\"confirm\">Confirm Password</label>\
+                        <input type=\"password\" id=\"confirm\" name=\"confirm\" class=\"form-control\" autofocus>\
+                        <button id=\"modifyuser\" class=\"btn btn-lg btn-primary btn-block\" type=\"submit\">Modify User</button>\
+                        </form>");
+}
+
 
 function display_main_page(){
 	$("#description").html("<h1>Tune your radio to ".concat(radioStation, ", select a song below, and enjoy!</h1>"));

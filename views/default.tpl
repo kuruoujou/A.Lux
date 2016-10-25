@@ -31,8 +31,10 @@
         % # the server still won't let them play anything.
         % if userInfo['username']:
         var authenticated=true;
+        var username="{{userInfo['username']}}";
         % else:
         var authenticated=false;
+        var username="";
         % end
 	</script>
   </head>

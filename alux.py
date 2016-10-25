@@ -232,13 +232,16 @@ class alux():
         a sha512'd, salted, hash. Cookie expiration cannot be modified here."""
         oldUserInfo = self.db.getUser(alux_id = userInfo['alux_id'])
         if not oldUserInfo:
-            return False
+            return None
         if userInfo['password'] == userInfo['password_confirm']:
             userInfo['password'] = hashlib.sha512(
                     str.encode("{0}{1}".format(userInfo['password'], self.config['salt']))
                     ).hexdigest();
         else:
             userInfo['password'] = oldUserInfo['password']
+        testUsername = self.db.getUser(username=userInfo['username'])
+        if testUsername and testUsername != oldUserInfo['username']:
+            return False
         userInfo['expiration'] = oldUserInfo['expiration']
         self.db.modifyUser(userInfo['uid'], userInfo)
         return True

@@ -138,8 +138,12 @@ def authenticate():
 @post('/modifyuser')
 def modifyuser():
     this_request = request.json
-    if not alux.updateUserInfo(this_request):
+    updateInfo = alux.updateUserInfo(this_request)
+    if updateInfo == None:
         response.status = 401
+        return
+    elif updateInfo == False:
+        response.status = 409
         return
     response.status = 204
     return
